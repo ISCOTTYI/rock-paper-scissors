@@ -1,22 +1,31 @@
 // https://stackoverflow.com/questions/33843799/constantly-read-json-database
 
-let player1;
-let player2;
+let player1 = {
+  x: 0,
+  y: 0
+};
+let player2 = {
+  x: 0,
+  y: 0
+}
 const d = 50;
+
+function make_fetch() {
+  fetch('http://localhost:8000/state')
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      player1.x = data.x1;
+      player1.y = data.y1;
+      player2.x = data.x2;
+      player2.y = data.y2;
+    });
+}
 
 function setup() {
   createCanvas(400, 400);
   noStroke();
-  player1 = {
-    x: 0 + d,
-    y: 0 + d,
-    diameter: d
-  };
-  player2 = {
-    x: 400 - d,
-    y: 400 - d,
-    diameter: d
-  };
+  make_fetch();
 }
 
 function playersColliding() {
@@ -28,26 +37,19 @@ function playersColliding() {
 }
 
 function draw() {
+  make_fetch();
   clear();
-  loadJSON('p1Pos.json?' + Date.now(), updateBall);
-  loadJSON('p2Pos.json?' + Date.now(), updateBall);
   fill(255, 0, 0);
-  ellipse(player1.x, player1.y, player1.diameter, player1.diameter);
+  ellipse(player1.x, player1.y, d, d);
   if (playersColliding()) {
     fill(255, 0, 0); 
   } else {
     fill(0, 255, 0); 
   }
-  ellipse(player2.x, player2.y, player2.diameter, player2.diameter);
+  ellipse(player2.x, player2.y, d, d);
 }
 
-function updateBall(data) {
-  // update the ball position based on the data in the JSON file
-  if (data.playerNumber == 1) {
-    player1.x = data.x;
-    player1.y = data.y;
-  } else if (data.playerNumber == 2) {
-    player2.x = data.x;
-    player2.y = data.y;
-  }
-}
+// fetch('http://localhost:8000/state')
+//   .then(response => response.json())
+//   .then(data => console.log(data));
+

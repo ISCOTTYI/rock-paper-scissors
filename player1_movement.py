@@ -1,10 +1,12 @@
 import json
 import time
 import random
+import requests
 
 MAX_X, MIN_X = 400, 0
 MAX_Y, MIN_Y = 400, 0
 R = 50 / 2
+URL = 'http://localhost:8000'
 
 pos = {
     'x': 100, 'y': 100,
@@ -23,18 +25,18 @@ def step():
     pos['y'] = ny
 
 
-def write():
-    formated_pos = {
-        'x': pos['x'],
-        'y': pos['y'],
-        'playerNumber': 1
+def send():
+    d = {
+        'x1':  pos['x'],
+        'y1':  pos['y'],
+        'x2':  pos['x'] + R/2,
+        'y2':  pos['y'] + -R/2
     }
-    with open('p1Pos.json', 'w') as f:
-        f.write(json.dumps(formated_pos))
+    requests.post(URL, json=d)
 
 
 if __name__ == '__main__':
     while True:
         time.sleep(0.01)
         step()
-        write()
+        send()
