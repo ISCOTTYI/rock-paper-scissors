@@ -9,6 +9,7 @@ class Player():
         self.writer = writer
     
     async def make_move(self, game_state):
+        # TODO catch error if player disconnects, takes too long or other shit
         self.writer.write(b'its your turn ' + str(game_state).encode() + b'\n')
         return int(await self.reader.readline())
 
@@ -20,12 +21,6 @@ class Game():
         self.state = 1
         self.players = []
         self.max_players = 2
-        def do_nothing(state):
-            pass
-        self.state_listener = do_nothing
-    
-    def notify_state_change(self): # TODO
-        self.state_listener(self.state)
     
     async def handle_new_connection(self, reader, writer):
         if len(self.players) >= self.max_players:
@@ -35,16 +30,13 @@ class Game():
         # All players joined, start game
         if len(self.players) == self.max_players:
             await self.run()
-            # game = Game()
-            # await game.run()
     
     async def run(self):
-        whos_turn = 0
+        whos_turn = 0 # TODO async queue instead?
         # Game loop
         while True:
-            next_player = self.players[whos_turn % 2]
+            next_player = self.players[whos_turn % self.max_players]
             self.state = await next_player.make_move(self.state)
-            self.notify_state_change()
             whos_turn += 1
 
     # writer.write(b'hallo')
@@ -73,31 +65,38 @@ async def run_tcp_server(game):
     async with server:
         await server.serve_forever()
 
+class HTTPHandler():
+    def __init__(self, game):
+        self.game = game
 
-# Web server handler
-async def handle(request):
-    name = request.match_info.get('name', "Anonymous")
-    text = "Hello, " + name
-    print('Request served!')
-    return web.Response(text=text)
+    async def handle_game_state_request(self, request):
+        game_state = self.game.state
+        return web.json_response(game_state)
+
+    async def handle_html_request(self, request):
+        return web.FileResponse('./index.html')
 
 
-async def run_web_server():
+async def run_web_server(game):
+    handler = HTTPHandler(game)
     app = web.Application()
-    app.add_routes([web.get('/', handle),
-                    web.get('/{name}', handle)])
+    app.add_routes([
+        web.get('/', handler.handle_html_request),
+        web.get('/game_state', handler.handle_game_state_request),
+        web.static('/static', './')
+    ])
     runner = web.AppRunner(app)
     await runner.setup()
-    url = '127.0.0.1'
+    host = '127.0.0.1'
     port = 8080
-    site = web.TCPSite(runner, url, port)
-    print(f'Serving web server on {url}:{port}')
+    site = web.TCPSite(runner, host, port)
+    print(f'Serving web server on {host}:{port}')
     await site.start()
 
 
 async def main():
     game = Game()
-    await asyncio.gather(run_tcp_server(game), run_web_server())
+    await asyncio.gather(run_tcp_server(game), run_web_server(game))
 
 
 if __name__ == '__main__':

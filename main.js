@@ -1,5 +1,3 @@
-// https://stackoverflow.com/questions/33843799/constantly-read-json-database
-
 let player1 = {
   x: 0,
   y: 0
@@ -48,21 +46,21 @@ function playersColliding(positions) {
 
 
 
-async function draw() {
-  // Do not fetch here, but in a seperate function that writes to variable.
-  // only fetch every 10 ms or so...
-  let positions = await requestPlayerPositions();
-  console.log(positions);
-  clear();
-  fill(255, 0, 0);
-  ellipse(positions["x1"], positions["y1"], d, d);
-  if (playersColliding(positions)) {
-    fill(255, 0, 0); 
-  } else {
-    fill(0, 255, 0); 
-  }
-  ellipse(positions["x2"], positions["y2"], d, d);
-}
+// async function draw() {
+//   // Do not fetch here, but in a seperate function that writes to variable.
+//   // only fetch every 10 ms or so...
+//   let positions = await requestPlayerPositions();
+//   console.log(positions);
+//   clear();
+//   fill(255, 0, 0);
+//   ellipse(positions["x1"], positions["y1"], d, d);
+//   if (playersColliding(positions)) {
+//     fill(255, 0, 0); 
+//   } else {
+//     fill(0, 255, 0); 
+//   }
+//   ellipse(positions["x2"], positions["y2"], d, d);
+// }
 
 // fetch('http://localhost:8000/state')
 //   .then(response => response.json())
