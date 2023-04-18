@@ -1,42 +1,42 @@
-let player1 = {
-  x: 0,
-  y: 0
-};
-let player2 = {
-  x: 0,
-  y: 0
-}
+const gameStateUrl = 'http://localhost:8080/game_state'
+
+// Ball diameter
 const d = 50;
 
-// async function requestPositions() {
-//   fetch('http://localhost:8000/state')
-//     .then(response => response.json())
-//     .then(data => {
-//       console.log(data);
-//       player1.x = data.x1;
-//       player1.y = data.y1;
-//       player2.x = data.x2;
-//       player2.y = data.y2;
-//     });
-// }
+let playerPositions;
 
-async function requestPlayerPositions() {
+// async function requestPlayerPositions() {
+//   try {
+//     let response = await fetch(gameStateUrl);
+//     let gameState = response.json();
+//     console.log(gameState);
+//     setTimeout(requestPlayerPositions, 1000);
+//     return gameState;
+//   } catch (error) {
+//     console.error(error);
+//   }
+// }
+async function pollPlayerPositions() {
   try {
-    let response = await fetch('http://localhost:8000/state');
-    return response.json();
+    const response = await fetch(gameStateUrl);
+    const data = await response.json();
+    console.log(data);
+    playerPositions = data;
   } catch (error) {
     console.error(error);
   }
+  setTimeout(pollPlayerPositions, 10);
 }
 
 function setup() {
   createCanvas(400, 400);
   noStroke();
+  pollPlayerPositions();
 }
 
-function playersColliding(positions) {
-  deltaX = positions["x1"] - positions["x2"];
-  deltaY = positions["y1"] - positions["y2"];
+function playersColliding() {
+  deltaX = playerPositions['0'][0] - playerPositions['1'][0];
+  deltaY = playerPositions['0'][1] - playerPositions['1'][1];
   distance = Math.sqrt((deltaX)**2 + (deltaY)**2);
   if (distance < d) {
     return true;
@@ -44,25 +44,16 @@ function playersColliding(positions) {
   return false;
 }
 
-
-
-// async function draw() {
-//   // Do not fetch here, but in a seperate function that writes to variable.
-//   // only fetch every 10 ms or so...
-//   let positions = await requestPlayerPositions();
-//   console.log(positions);
-//   clear();
-//   fill(255, 0, 0);
-//   ellipse(positions["x1"], positions["y1"], d, d);
-//   if (playersColliding(positions)) {
-//     fill(255, 0, 0); 
-//   } else {
-//     fill(0, 255, 0); 
-//   }
-//   ellipse(positions["x2"], positions["y2"], d, d);
-// }
-
-// fetch('http://localhost:8000/state')
-//   .then(response => response.json())
-//   .then(data => console.log(data));
-
+function draw() {
+  // Do not fetch here, but in a seperate function that writes to variable.
+  // only fetch every 10 ms or so...
+  clear();
+  fill(255, 0, 0);
+  ellipse(playerPositions['0'][0], playerPositions['0'][1], d, d);
+  if (playersColliding()) {
+    fill(255, 0, 0); 
+  } else {
+    fill(0, 255, 0); 
+  }
+  ellipse(playerPositions['1'][0], playerPositions['1'][1], d, d);
+}

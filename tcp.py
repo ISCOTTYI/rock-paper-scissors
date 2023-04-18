@@ -1,6 +1,7 @@
 import asyncio
+import json
 from aiohttp import web
-
+from random import randint
 
 class Player():
     def __init__(self, id, reader, writer):
@@ -10,31 +11,39 @@ class Player():
     
     async def make_move(self, game_state):
         # TODO catch error if player disconnects, takes too long or other shit
-        self.writer.write(b'its your turn ' + str(game_state).encode() + b'\n')
-        return int(await self.reader.readline())
+        self.writer.write(json.dumps(game_state).encode() + b'\n')
+        return json.loads(await self.reader.readline())
 
 
 class Game():
     def __init__(self):
-        # TODO state is dict {player_id: (x, y)}
-        # when new player joins random positions are assigned
-        self.state = 1
+        self.x_bounds = (0, 400)
+        self.y_bounds = (0, 400)
+        self.state = {}
         self.players = []
         self.max_players = 2
     
     async def handle_new_connection(self, reader, writer):
         if len(self.players) >= self.max_players:
             raise Exception(f'Already {self.max_players} players in the game!')
-        player_id = len(self.players)
+        player_id = str(len(self.players))
         self.players.append(Player(player_id, reader, writer))
+        self._update_state_new_player(player_id)
         # All players joined, start game
         if len(self.players) == self.max_players:
             await self.run()
+    
+    def _update_state_new_player(self, player_id):
+        x, y = randint(*self.x_bounds), randint(*self.y_bounds)
+        self.state.update({
+            player_id: [x, y]
+        })
     
     async def run(self):
         whos_turn = 0 # TODO async queue instead?
         # Game loop
         while True:
+            print(self.state, type(self.state))
             next_player = self.players[whos_turn % self.max_players]
             self.state = await next_player.make_move(self.state)
             whos_turn += 1
@@ -76,7 +85,7 @@ class HTTPHandler():
     async def handle_html_request(self, request):
         return web.FileResponse('./index.html')
 
-
+# https://stackoverflow.com/questions/63055781/async-python-3-http-server-without-any-ready-made-web-frameworks-how
 async def run_web_server(game):
     handler = HTTPHandler(game)
     app = web.Application()
