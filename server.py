@@ -11,6 +11,8 @@ class Player():
     
     async def make_move(self, game_state):
         # TODO catch error if player disconnects, takes too long or other shit
+        # TODO deal with the case that player did not send data in time. data
+        #      will still be recieved and must be thrown out. send round number
         self.writer.write(json.dumps(game_state).encode() + b'\n')
         return json.loads(await self.reader.readline())
 
@@ -27,7 +29,8 @@ class Game():
         if len(self.players) >= self.max_players:
             raise Exception(f'Already {self.max_players} players in the game!')
         player_id = str(len(self.players))
-        self.players.append(Player(player_id, reader, writer))
+        player = Player(player_id, reader, writer)
+        self.players.append(player)
         self._update_state_new_player(player_id)
         # All players joined, start game
         if len(self.players) == self.max_players:
