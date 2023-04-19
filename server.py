@@ -30,6 +30,9 @@ class Game():
             raise Exception(f'Already {self.max_players} players in the game!')
         player_id = str(len(self.players))
         player = Player(player_id, reader, writer)
+        print(player)
+        print(await player.reader.readline())
+        player.writer.write(b'hi\n')
         self.players.append(player)
         self._update_state_new_player(player_id)
         # All players joined, start game
