@@ -1,59 +1,64 @@
-const gameStateUrl = 'http://localhost:8080/game_state'
+const HOST = '127.0.0.1'; const PORT = 8080;
+const FPS = 100; const msPerFrame = 1000 / FPS;
 
-// Ball diameter
-const d = 50;
+const HEIGHT = 400;
+const WIDTH = 400;
 
 let playerPositions;
+const colorRGBs = [
+  [255, 0, 0], // red
+  [0, 255, 0], // green
+  [0, 0, 255], // blue
+];
+let symbols;
+function preload() {
+  symbols = {
+    "0": loadImage(`/static/rock.png`),
+    "1": loadImage(`/static/paper.png`),
+    "2": loadImage(`/static/scissors.png`)
+  };
+}
 
-// async function requestPlayerPositions() {
-//   try {
-//     let response = await fetch(gameStateUrl);
-//     let gameState = response.json();
-//     console.log(gameState);
-//     setTimeout(requestPlayerPositions, 1000);
-//     return gameState;
-//   } catch (error) {
-//     console.error(error);
-//   }
-// }
 async function pollPlayerPositions() {
   try {
-    const response = await fetch(gameStateUrl);
+    const response = await fetch("/game_state");
     const data = await response.json();
     console.log(data);
     playerPositions = data;
+    redraw(); // calls draw()
   } catch (error) {
     console.error(error);
   }
-  setTimeout(pollPlayerPositions, 10);
+  setTimeout(pollPlayerPositions, msPerFrame);
 }
 
 function setup() {
-  createCanvas(400, 400);
+  noLoop();
+  createCanvas(HEIGHT, WIDTH, WEBGL);
   noStroke();
   pollPlayerPositions();
 }
 
-function playersColliding() {
-  deltaX = playerPositions['0'][0] - playerPositions['1'][0];
-  deltaY = playerPositions['0'][1] - playerPositions['1'][1];
-  distance = Math.sqrt((deltaX)**2 + (deltaY)**2);
-  if (distance < d) {
-    return true;
+function drawPlayer(playerId, colorRGB = null) { //, symbol = null
+  const ballDiameter = 50;
+  if (colorRGB != null) {
+    const [r, g, b] = colorRGB;
+    fill(r, g, b);
   }
-  return false;
+  // if (symbol != null) {
+  //   texture(symbol);
+  // }
+  let [pieceType, x, y] = playerPositions[String(playerId)];
+  texture(symbols[pieceType]);
+  // WEBGL places (0, 0) in the center of the canvas, correct that
+  x -= WIDTH/2;
+  y -= HEIGHT/2;
+  circle(x, y, ballDiameter);
 }
 
 function draw() {
-  // Do not fetch here, but in a seperate function that writes to variable.
-  // only fetch every 10 ms or so...
   clear();
-  fill(255, 0, 0);
-  ellipse(playerPositions['0'][0], playerPositions['0'][1], d, d);
-  if (playersColliding()) {
-    fill(255, 0, 0); 
-  } else {
-    fill(0, 255, 0); 
-  }
-  ellipse(playerPositions['1'][0], playerPositions['1'][1], d, d);
+  Object.keys(playerPositions).forEach((playerId, i) => {
+    drawPlayer(playerId, colorRGBs[i], symbols[i]); //, colorRGBs[i]);
+  });
 }
