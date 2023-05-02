@@ -35,11 +35,13 @@ if __name__ == '__main__':
     f.write(str(s.getsockname()).encode() + b'\n')
     while True:
         data = json.loads(f.readline())
-        piece_type, x, y = data[PLAYER_NUMBER]
         print(f'Got {data}')
-        nx, ny = step(x, y)
-        data.update({
-            PLAYER_NUMBER: [piece_type, nx, ny]
-        })
+        agents = data[PLAYER_NUMBER]
+        for agent in agents:
+            piece_type, x, y = agent
+            nx, ny = step(x, y)
+            data.update({
+                PLAYER_NUMBER: [[piece_type, nx, ny]]
+            })
         print(f'New data {data}')
         f.write(json.dumps(data).encode() + b'\n')

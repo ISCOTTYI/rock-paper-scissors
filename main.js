@@ -39,17 +39,14 @@ function setup() {
   pollPlayerPositions();
 }
 
-function drawPlayer(playerId, colorRGB = null) { //, symbol = null
+function drawAgent(agent, colorRGB = null) { //, symbol = null
   const ballDiameter = 50;
   if (colorRGB != null) {
     const [r, g, b] = colorRGB;
     fill(r, g, b);
   }
-  // if (symbol != null) {
-  //   texture(symbol);
-  // }
-  let [pieceType, x, y] = playerPositions[String(playerId)];
-  texture(symbols[pieceType]);
+  let [agentType, x, y] = agent;
+  texture(symbols[agentType]);
   // WEBGL places (0, 0) in the center of the canvas, correct that
   x -= WIDTH/2;
   y -= HEIGHT/2;
@@ -59,6 +56,9 @@ function drawPlayer(playerId, colorRGB = null) { //, symbol = null
 function draw() {
   clear();
   Object.keys(playerPositions).forEach((playerId, i) => {
-    drawPlayer(playerId, colorRGBs[i], symbols[i]); //, colorRGBs[i]);
+    agents = playerPositions[playerId];
+    agents.forEach(agent => {
+      drawAgent(agent);
+    });
   });
 }

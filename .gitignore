@@ -3,3 +3,5 @@ async_test.py
 Makefile
 cpp_client
 NOTES.md
+tests.ipynb
+/.ipynb_checkpoints

@@ -24,15 +24,17 @@ class Game():
         self.x_bounds = (0, 400)
         self.y_bounds = (0, 400)
         self.radius = 25
-        self.state = {}
         self.players = []
+        self.state = {}
         self.max_players = 2
 
-    # @property
-    # def state(self):
-    #     st = {}
-    #     for player in self.players:
-    #         st.update({player.id: []})
+    @property
+    def agents(self):
+        return [
+            (player_id, i, agent)
+            for player_id in self.state.keys()
+            for i, agent in enumerate(self.state[player_id])
+        ]
     
     async def handle_new_connection(self, reader, writer):
         if len(self.players) >= self.max_players:
@@ -41,8 +43,7 @@ class Game():
         player = Player(player_id, reader, writer)
         addr = (await player.reader.readline()).decode()[:-1]
         print(f'Player {player_id} with socket address {addr} joined!')
-        self.players.append(player)
-        self._update_state_new_player(player_id)
+        self.add_player(player)
         # All players joined, start game
         if len(self.players) == self.max_players:
             print('All players joined, starting game!')
@@ -51,28 +52,50 @@ class Game():
             print(time.sleep(2))
             await self.run()
     
-    def _update_state_new_player(self, player_id):
-        # TODO
+    def add_player(self, player):
+        self.players.append(player)
         x, y = randint(*self.x_bounds), randint(*self.y_bounds)
-        piece_type = ["0", "1", "2"][randint(0, 2)]
-        self.state.update({
-            player_id: [piece_type, x, y]
-        })
+        agent_type = ["0", "1", "2"][randint(0, 2)]
+        agent = [agent_type, x, y]
+        self.state.update({player.id: [agent]})
 
-    def _rock_paper_scissors_winner(self, player, opponent):
+    def rps_fight(self, player_agent, opponent_agent, same_player=False):
+        '''
+        For a given player_agent and opponent agent in format (agent_type, x, y),
+        return the player and opponent agent after a rock-paper-scissors fight.
+        '''
+        player_agent_type = player_agent[0]
+        opponent_agent_type = opponent_agent[0]
+        if same_player:
+            pass
         # https://codereview.stackexchange.com/questions/240494/rock-paper-scissors-without-arrays-and-if-statements-how-to-reduce
         # Player and opponent are one out of rock (0), paper(1), scissors(2)
         # Returns 1 if player won, -1 if player lost, 0 for a tie
-        return (player - opponent + 4) % 3 - 1
+        winner = (int(player_agent_type) - int(opponent_agent_type) + 4) % 3 - 1
+        if winner == 1:
+            opponent_agent[0] = player_agent_type
+        elif winner == -1:
+            player_agent[0] = opponent_agent_type
+        return player_agent, opponent_agent
     
-    # def check_collisions(self):
-    #     for agent_pair in combinations(self.state.values(), 2):
-    #         player, opponent = agent_pair
-    #         if np.all(np.subtract(player[1:], opponent[1:]) < self.radius):
-    #             outcome = self._rock_paper_scissors_winner(player, opponent)
-    #             if outcome == 1:
+    def are_colliding(self, player_agent, opponent_agent):
+        player_vec = np.array(player_agent[1:])
+        opponent_vec = np.array(opponent_agent[1:])
+        distance_vec = np.abs(player_vec - opponent_vec)
+        if np.all(distance_vec < self.radius):
+            return True
+        return False
+    
+    def handle_collisions(self):
+        # TODO: what if three collide at the same time? Depends on update order...
+        for p, o in combinations(self.agents, 2):
+            p_id, p_i, p_agent = p
+            o_id, o_i, o_agent = o
+            if self.are_colliding(p_agent, o_agent):
+                p_agent, o_agent = self.rps_fight(p_agent, o_agent)
+                self.state[p_id][p_i] = p_agent
+                self.state[o_id][o_i] = o_agent
 
-        
     async def run(self):
         whos_turn = 0 # TODO async queue instead?
         # Game loop
@@ -80,7 +103,7 @@ class Game():
             print(self.state, type(self.state))
             next_player = self.players[whos_turn % self.max_players]
             self.state = await next_player.make_move(self.state)
-            # self.detect_collision()
+            self.handle_collisions()
             whos_turn += 1
 
 class HTTPHandler():
