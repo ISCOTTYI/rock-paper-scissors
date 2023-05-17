@@ -1,9 +1,18 @@
 import asyncio
 import json
+import logging
 from aiohttp import web
 from random import randint
 import numpy as np
 from itertools import combinations
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 class Player():
     def __init__(self, id, reader, writer):
@@ -11,13 +20,30 @@ class Player():
         self.reader = reader
         self.writer = writer
     
+    async def _make_move(self, game_state):
+        round = game_state["round"]
+        self.writer.write(json.dumps(game_state).encode() + b'\n')
+        response = json.loads(await self.reader.readline())
+        print(response)
+        # Make sure response is not a delayed response from a skipped round
+        while response["round"] != round:
+            logger.debug(f'Recieved delayed response from round {response["round"]}')
+            response = json.loads(await self.reader.readline())
+        return response["moves"]
+    
     async def make_move(self, game_state):
         # TODO catch error if player disconnects, takes too long or other shit
         # TODO deal with the case that player did not send data in time. data
         #      will still be recieved and must be thrown out. send round number
-        self.writer.write(json.dumps(game_state).encode() + b'\n')
-        return json.loads(await self.reader.readline())
-
+        MAX_TIMEOUT = 0.01 # 10 ms
+        try:
+            moves = await asyncio.wait_for(
+                self._make_move(game_state), timeout=MAX_TIMEOUT)
+        except asyncio.exceptions.TimeoutError:
+            logger.warning(f'Player {self.id} timed out...')
+            moves = []
+        return moves
+    
 
 class Game():
     def __init__(self):
@@ -25,15 +51,15 @@ class Game():
         self.y_bounds = (0, 400)
         self.radius = 25
         self.players = []
-        self.state = {}
+        self.state = {"round": 0}
         self.max_players = 2
 
     @property
     def agents(self):
         return [
-            (player_id, i, agent)
-            for player_id in self.state.keys()
-            for i, agent in enumerate(self.state[player_id])
+            (player.id, i, agent)
+            for player in self.players
+            for i, agent in enumerate(self.state[player.id])
         ]
     
     async def handle_new_connection(self, reader, writer):
@@ -42,14 +68,14 @@ class Game():
         player_id = str(len(self.players))
         player = Player(player_id, reader, writer)
         addr = (await player.reader.readline()).decode()[:-1]
-        print(f'Player {player_id} with socket address {addr} joined!')
+        logger.info(f'Player {player_id} with socket address {addr} joined!')
         self.add_player(player)
         # All players joined, start game
         if len(self.players) == self.max_players:
-            print('All players joined, starting game!')
-            print(self.state)
+            logger.info('All players joined, starting game!')
+            logger.debug(self.state)
             import time
-            print(time.sleep(2))
+            time.sleep(2)
             await self.run()
     
     def add_player(self, player):
@@ -87,7 +113,6 @@ class Game():
         return False
     
     def handle_collisions(self):
-        # TODO: what if three collide at the same time? Depends on update order...
         for p, o in combinations(self.agents, 2):
             p_id, p_i, p_agent = p
             o_id, o_i, o_agent = o
@@ -95,16 +120,41 @@ class Game():
                 p_agent, o_agent = self.rps_fight(p_agent, o_agent)
                 self.state[p_id][p_i] = p_agent
                 self.state[o_id][o_i] = o_agent
-
+    
+    def player_moves_to_state(self, player_id, moves):
+        '''
+        moves is list of [v, phi] pairs in order of player agents
+        '''
+        for i, move in enumerate(moves):
+            v, phi = move
+            assert 0 <= v <= 0.1
+            assert 0 <= phi <= 2 * np.pi
+            x_orientation, y_orientation = np.cos(phi), np.sin(phi)
+            x = self.state[str(player_id)][i][1]
+            y = self.state[str(player_id)][i][2]
+            self.state[str(player_id)][i][1] = (x + v * x_orientation) % self.x_bounds[1]
+            self.state[str(player_id)][i][2] = (y + v * y_orientation) % self.y_bounds[1]
+    
+    def game_over(self):
+        # if one player has no more agents, game is over
+        for player in self.players:
+            if not self.state[player.id]:
+                return True
+        return False
+            
     async def run(self):
         whos_turn = 0 # TODO async queue instead?
         # Game loop
         while True:
-            print(self.state, type(self.state))
+            if self.game_over:
+                break
+            logger.debug(self.state)
             next_player = self.players[whos_turn % self.max_players]
-            self.state = await next_player.make_move(self.state)
+            moves = await next_player.make_move(self.state)
+            self.player_moves_to_state(next_player.id, moves)
             self.handle_collisions()
             whos_turn += 1
+            self.state["round"] += 1
 
 class HTTPHandler():
     def __init__(self, game):

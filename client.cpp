@@ -1,78 +1,89 @@
 #include <iostream>
-#include <string>
-#include <stdio.h>
-#include <sys/types.h>
+#include <cstring>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
-#include <netdb.h>
-#include <sys/uio.h>
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <fstream>
-using namespace std;
 
-#define BUFFER_SIZE 4096
+int main() {
+    // Create a TCP socket
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1) {
+        std::cerr << "Error creating socket\n";
+        return 1;
+    }
 
-// Client side
-int main()
-{
-    const char *serverIp = "127.0.0.1";
-    int port = 9999;
-    // create a message buffer
-    char msg[BUFFER_SIZE];
-    // setup a socket and connection tools
-    struct hostent *host = gethostbyname(serverIp);
-    sockaddr_in sendSockAddr;
-    bzero((char *)&sendSockAddr, sizeof(sendSockAddr));
-    sendSockAddr.sin_family = AF_INET;
-    sendSockAddr.sin_addr.s_addr =
-        inet_addr(inet_ntoa(*(struct in_addr *)*host->h_addr_list));
-    sendSockAddr.sin_port = htons(port);
-    int clientSd = socket(AF_INET, SOCK_STREAM, 0);
-    // try to connect...
-    int status = connect(clientSd,
-                         (sockaddr *)&sendSockAddr, sizeof(sendSockAddr));
-    if (status < 0)
-    {
-        cout << "Error connecting to socket!" << endl;
-        return -1;
+    // Set up the server address
+    sockaddr_in server_addr;
+    std::memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(9999); // Use port 9999
+    if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) == -1) {
+        std::cerr << "Error setting server address\n";
+        return 1;
     }
-    cout << "Connected to the server!" << endl;
-    int bytesRead, bytesWritten = 0;
-    struct timeval start1, end1;
-    gettimeofday(&start1, NULL);
-    while (1)
-    {
-        string data = "hello\n";
-        memset(&msg, 0, sizeof(msg)); // clear the buffer
-        strcpy(msg, data.c_str());
-        if (data == "exit")
-        {
-            send(clientSd, (char *)&msg, strlen(msg), 0);
-            break;
-        }
-        bytesWritten += send(clientSd, (char *)&msg, strlen(msg), 0);
-        cout << "Awaiting server response..." << endl;
-        memset(&msg, 0, sizeof(msg)); // clear the buffer
-        bytesRead += recv(clientSd, (char *)&msg, sizeof(msg), 0);
-        if (!strcmp(msg, "exit"))
-        {
-            cout << "Server has quit the session" << endl;
-            break;
-        }
-        cout << "Server: " << msg << endl;
+
+    // Connect to the server
+    if (connect(sock, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr)) == -1) {
+        std::cerr << "Error connecting to server\n";
+        return 1;
     }
-    gettimeofday(&end1, NULL);
-    close(clientSd);
-    cout << "********Session********" << endl;
-    cout << "Bytes written: " << bytesWritten << " Bytes read: " << bytesRead << endl;
-    cout << "Elapsed time: " << (end1.tv_sec - start1.tv_sec)
-         << " secs" << endl;
-    cout << "Connection closed" << endl;
+
+    // Retrieve the local socket address and port
+    sockaddr_in local_address;
+    socklen_t local_address_length = sizeof(local_address);
+    if (getsockname(sock, (sockaddr*) &local_address, &local_address_length) == -1) {
+        std::cerr << "Error getting local socket address\n";
+        return 1;
+    }
+
+    char hello_message[1024];
+    int bytes_sent = snprintf(
+        hello_message, 1024, "%s:%d\n", 
+        inet_ntoa(local_address.sin_addr), ntohs(local_address.sin_port));
+
+    if (send(sock, hello_message, bytes_sent, 0) == -1) {
+        std::cerr << "Error sending message1\n";
+        return 1;
+    }
+
+    // Receive data from the server
+    const int max_buffer_size = 1024;
+    char buffer[max_buffer_size];
+    int bytes_received = 0;
+    while (true) {
+        int bytes = recv(sock, buffer + bytes_received, 1, 0);
+        if (bytes == -1) {
+            std::cerr << "Error receiving data from server\n";
+            return 1;
+        } else if (bytes == 0) {
+            // Connection closed by server
+            break;
+        } else {
+            bytes_received += bytes;
+            if (bytes_received == max_buffer_size) {
+                // Buffer full, increase its size or process the data
+                std::cerr << "Received message is too long for the buffer\n";
+                return 1;
+            } else if (buffer[bytes_received - 1] == '\n') {
+                // End of message received
+                break;
+            }
+        }
+    }
+
+    // Print the received data
+    buffer[bytes_received-1] = '\0';
+    std::cout << "Received " << bytes_received << " bytes from server: " << buffer << "\n";
+
+    // Send a response to the server
+    const char* message2 = "Goodbye, server!\n";
+    if (send(sock, message2, std::strlen(message2), 0) == -1) {
+        std::cerr << "Error sending message2\n";
+        return 1;
+    }
+
+    // Close the socket
+    close(sock);
+
     return 0;
 }
