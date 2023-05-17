@@ -1,9 +1,10 @@
 import asyncio
 import json
 import logging
+import math
 from aiohttp import web
 from random import randint
-import numpy as np
+# import numpy as np
 from itertools import combinations
 
 logger = logging.getLogger(__name__)
@@ -14,20 +15,92 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+
+class Agent():
+    count = 0
+    def __init__(self, x, y, r, owner, kind=None):
+        if kind is None:
+            kind = randint(0, 2)
+        assert kind in (0, 1, 2)
+        self.kind = kind
+        self.x = x
+        self.y = y
+        self.r = r
+        self.owner = owner
+        Agent.count += 1
+        self.id = Agent.count
+
+    def json_serializable(self):
+        return [str(self.kind), self.x, self.y]
+    
+    def move_agent(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def vs(self, opponent_agent):
+        '''
+        0 - tie or no collision, 1 - self won, -1 - opponent won
+        '''
+        if not self.colliding_with(opponent_agent):
+            return 0
+        if self.owner.id == opponent_agent.owner.id:
+            pass # different outcome if same player
+        # https://codereview.stackexchange.com/questions/240494/rock-paper-scissors-without-arrays-and-if-statements-how-to-reduce
+        outcome = (self.kind - opponent_agent.kind + 4) % 3 - 1
+        return outcome
+    
+    def colliding_with(self, opponent_agent):
+        dx = abs(self.x - opponent_agent.x)
+        dy = abs(self.y - opponent_agent.y)
+        d = math.sqrt(dx**2 + dy**2)
+        if d < self.r + opponent_agent.r:
+            return True
+        return False
+
+
 class Player():
     def __init__(self, id, reader, writer):
         self.id = id
         self.reader = reader
         self.writer = writer
+        self._agents = {}
     
-    async def _make_move(self, game_state):
+    @property
+    def agents(self):
+        return list(self._agents.values())
+    
+    def json_serializable(self):
+        return self.agents
+
+    def add_agent(self, agent):
+        self._agents.update({agent.id: agent})
+    
+    def remove_agent(self, agent):
+        del self._agents[agent.id]
+
+    def move_agent_owner_to(self, player, agent):
+        # logger.debug(self.__dict__)
+        # logger.debug(player.__dict__)
+        # logger.debug(agent.__dict__)
+        assert agent.id in self._agents
+        player.add_agent(agent)
+        self.remove_agent(agent)
+        agent.owner = player
+
+    async def send_move_request(self, game_state):
+        '''
+        Send a move request to the player. The request consists of sending the
+        game_state and waiting for moves in response. The moves are returned.
+        '''
         round = game_state["round"]
-        self.writer.write(json.dumps(game_state).encode() + b'\n')
+        jsoned_state = json.dumps(
+            game_state, default=lambda o: o.json_serializable())
+        self.writer.write(jsoned_state.encode() + b'\n')
         response = json.loads(await self.reader.readline())
-        print(response)
         # Make sure response is not a delayed response from a skipped round
         while response["round"] != round:
-            logger.debug(f'Recieved delayed response from round {response["round"]}')
+            logger.debug(
+                f'Recieved delayed response from round {response["round"]}')
             response = json.loads(await self.reader.readline())
         return response["moves"]
     
@@ -38,7 +111,7 @@ class Player():
         MAX_TIMEOUT = 0.01 # 10 ms
         try:
             moves = await asyncio.wait_for(
-                self._make_move(game_state), timeout=MAX_TIMEOUT)
+                self.send_move_request(game_state), timeout=MAX_TIMEOUT)
         except asyncio.exceptions.TimeoutError:
             logger.warning(f'Player {self.id} timed out...')
             moves = []
@@ -51,16 +124,26 @@ class Game():
         self.y_bounds = (0, 400)
         self.radius = 25
         self.players = []
-        self.state = {"round": 0}
+        # self.state = {"round": 0}
+        self.round = 0
         self.max_players = 2
+    
+    @property
+    def game_state(self):
+        state = {"round": self.round}
+        state.update(self.json_serializable())
+        return state
 
     @property
     def agents(self):
-        return [
-            (player.id, i, agent)
-            for player in self.players
-            for i, agent in enumerate(self.state[player.id])
-        ]
+        return sum([player.agents for player in self.players], [])
+    
+    def json_serializable(self):
+        return {player.id: player for player in self.players}
+
+    def __str__(self):
+        return json.dumps(
+            self.game_state, default=lambda o: o.json_serializable())
     
     async def handle_new_connection(self, reader, writer):
         if len(self.players) >= self.max_players:
@@ -69,76 +152,56 @@ class Game():
         player = Player(player_id, reader, writer)
         addr = (await player.reader.readline()).decode()[:-1]
         logger.info(f'Player {player_id} with socket address {addr} joined!')
-        self.add_player(player)
+        self.add_player(player, 1) # one agent per new player
         # All players joined, start game
         if len(self.players) == self.max_players:
             logger.info('All players joined, starting game!')
-            logger.debug(self.state)
+            logger.debug(str(self))
             import time
             time.sleep(2)
             await self.run()
     
-    def add_player(self, player):
+    def add_player(self, player, number_of_agents):
         self.players.append(player)
-        x, y = randint(*self.x_bounds), randint(*self.y_bounds)
-        agent_type = ["0", "1", "2"][randint(0, 2)]
-        agent = [agent_type, x, y]
-        self.state.update({player.id: [agent]})
-
-    def rps_fight(self, player_agent, opponent_agent, same_player=False):
-        '''
-        For a given player_agent and opponent agent in format (agent_type, x, y),
-        return the player and opponent agent after a rock-paper-scissors fight.
-        '''
-        player_agent_type = player_agent[0]
-        opponent_agent_type = opponent_agent[0]
-        if same_player:
-            pass
-        # https://codereview.stackexchange.com/questions/240494/rock-paper-scissors-without-arrays-and-if-statements-how-to-reduce
-        # Player and opponent are one out of rock (0), paper(1), scissors(2)
-        # Returns 1 if player won, -1 if player lost, 0 for a tie
-        winner = (int(player_agent_type) - int(opponent_agent_type) + 4) % 3 - 1
-        if winner == 1:
-            opponent_agent[0] = player_agent_type
-        elif winner == -1:
-            player_agent[0] = opponent_agent_type
-        return player_agent, opponent_agent
-    
-    def are_colliding(self, player_agent, opponent_agent):
-        player_vec = np.array(player_agent[1:])
-        opponent_vec = np.array(opponent_agent[1:])
-        distance_vec = np.abs(player_vec - opponent_vec)
-        if np.all(distance_vec < self.radius):
-            return True
-        return False
+        for _ in range(number_of_agents):
+            x, y = randint(*self.x_bounds), randint(*self.y_bounds)
+            player.add_agent(Agent(x, y, self.radius, player))
     
     def handle_collisions(self):
-        for p, o in combinations(self.agents, 2):
-            p_id, p_i, p_agent = p
-            o_id, o_i, o_agent = o
-            if self.are_colliding(p_agent, o_agent):
-                p_agent, o_agent = self.rps_fight(p_agent, o_agent)
-                self.state[p_id][p_i] = p_agent
-                self.state[o_id][o_i] = o_agent
+        for agent, opponent in combinations(self.agents, 2):
+            outcome = agent.vs(opponent)
+            if outcome == 0: # tie or no collision
+                continue
+            elif outcome == 1: # agent won
+                opponent.kind = agent.kind
+                opponent.owner.move_agent_owner_to(agent.owner, opponent)
+            else: # opponent won
+                agent.kind = opponent.kind
+                agent.owner.move_agent_owner_to(opponent.owner, agent)
     
-    def player_moves_to_state(self, player_id, moves):
+    def parse_player_moves(self, player, moves):
         '''
         moves is list of [v, phi] pairs in order of player agents
+        TODO: Use agent id instead somehow to avoid confusion
         '''
         for i, move in enumerate(moves):
+            agent = player.agents[i] # TODO: THIS IS SHIT!
+                                     #       maybe keep a dict of all agents in
+                                     #       the game with id keys in Game()?
             v, phi = move
             assert 0 <= v <= 0.1
-            assert 0 <= phi <= 2 * np.pi
-            x_orientation, y_orientation = np.cos(phi), np.sin(phi)
-            x = self.state[str(player_id)][i][1]
-            y = self.state[str(player_id)][i][2]
-            self.state[str(player_id)][i][1] = (x + v * x_orientation) % self.x_bounds[1]
-            self.state[str(player_id)][i][2] = (y + v * y_orientation) % self.y_bounds[1]
+            assert 0 <= phi <= 2*math.pi
+            x_dir = math.cos(phi)
+            y_dir = math.sin(phi)
+            agent.move_agent(
+                (agent.x + v * x_dir) % self.x_bounds[1],
+                (agent.y + v * y_dir) % self.y_bounds[1],
+            )
     
     def game_over(self):
         # if one player has no more agents, game is over
         for player in self.players:
-            if not self.state[player.id]:
+            if not player.agents:
                 return True
         return False
             
@@ -146,23 +209,27 @@ class Game():
         whos_turn = 0 # TODO async queue instead?
         # Game loop
         while True:
-            if self.game_over:
+            if self.game_over():
+                logger.info("Game is over!")
                 break
-            logger.debug(self.state)
+            logger.debug(str(self))
             next_player = self.players[whos_turn % self.max_players]
-            moves = await next_player.make_move(self.state)
-            self.player_moves_to_state(next_player.id, moves)
+            moves = await next_player.make_move(self.game_state)
+            self.parse_player_moves(next_player, moves)
             self.handle_collisions()
             whos_turn += 1
-            self.state["round"] += 1
+            self.round += 1
 
 class HTTPHandler():
     def __init__(self, game):
         self.game = game
 
     async def handle_game_state_request(self, request):
-        game_state = self.game.state
-        return web.json_response(game_state)
+        game_state = self.game.game_state
+        my_dumps = lambda d: json.dumps(d, default=lambda o: o.json_serializable())
+        return web.json_response(game_state, dumps=my_dumps)
+        # game_state = self.game.to_JSON()
+        # return web.json_response(game_state)
 
     async def handle_html_request(self, request):
         return web.FileResponse('./index.html')

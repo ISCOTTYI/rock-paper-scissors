@@ -5,3 +5,5 @@ cpp_client
 NOTES.md
 tests.ipynb
 /.ipynb_checkpoints
+/.vscode
+/__pycache__

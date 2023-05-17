@@ -57,7 +57,7 @@ function draw() {
   clear();
   Object.keys(playerPositions).forEach((playerId, i) => {
     agents = playerPositions[playerId];
-    agents.forEach(agent => {
+    agents.forEach(agent => { // problems if no players connected (only round)
       drawAgent(agent);
     });
   });

@@ -50,7 +50,7 @@ if __name__ == '__main__':
             v, phi = step(*agent[1:])
             moves.append([v, phi])
         response = {"round": round, "moves": moves}
-        import time
-        time.sleep(1)
+        # import time
+        # time.sleep(1)
         print(f'Responding {response}')
         f.write(json.dumps(response).encode() + b'\n')
