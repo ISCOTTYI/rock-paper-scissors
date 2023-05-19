@@ -19,6 +19,8 @@ logger.addHandler(handler)
 class Agent():
     count = 0
     def __init__(self, x, y, r, owner, kind=None):
+        self.id = Agent.count
+        Agent.count += 1
         if kind is None:
             kind = randint(0, 2)
         assert kind in (0, 1, 2)
@@ -27,8 +29,6 @@ class Agent():
         self.y = y
         self.r = r
         self.owner = owner
-        Agent.count += 1
-        self.id = Agent.count
 
     def json_serializable(self):
         return [str(self.kind), self.x, self.y]
@@ -59,7 +59,10 @@ class Agent():
 
 
 class Player():
+    # count = 0
     def __init__(self, id, reader, writer):
+        # self.id = Player.count
+        # Player.count += 1
         self.id = id
         self.reader = reader
         self.writer = writer
@@ -79,10 +82,10 @@ class Player():
         del self._agents[agent.id]
 
     def move_agent_owner_to(self, player, agent):
-        # logger.debug(self.__dict__)
-        # logger.debug(player.__dict__)
-        # logger.debug(agent.__dict__)
         assert agent.id in self._agents
+        # Don't do anything if owner is already 'player'
+        if self.id == player.id:
+            return
         player.add_agent(agent)
         self.remove_agent(agent)
         agent.owner = player
@@ -122,11 +125,12 @@ class Game():
     def __init__(self):
         self.x_bounds = (0, 400)
         self.y_bounds = (0, 400)
-        self.radius = 25
+        self.radius = 10
         self.players = []
         # self.state = {"round": 0}
         self.round = 0
         self.max_players = 2
+        self.agents_per_player = 20
     
     @property
     def game_state(self):
@@ -151,8 +155,9 @@ class Game():
         player_id = str(len(self.players))
         player = Player(player_id, reader, writer)
         addr = (await player.reader.readline()).decode()[:-1]
+        player.writer.write(player_id.encode() + b'\n')
         logger.info(f'Player {player_id} with socket address {addr} joined!')
-        self.add_player(player, 1) # one agent per new player
+        self.add_player(player, self.agents_per_player)
         # All players joined, start game
         if len(self.players) == self.max_players:
             logger.info('All players joined, starting game!')
@@ -186,8 +191,8 @@ class Game():
         '''
         for i, move in enumerate(moves):
             agent = player.agents[i] # TODO: THIS IS SHIT!
-                                     #       maybe keep a dict of all agents in
-                                     #       the game with id keys in Game()?
+                                    #       maybe keep a dict of all agents in
+                                    #       the game with id keys in Game()?
             v, phi = move
             assert 0 <= v <= 0.1
             assert 0 <= phi <= 2*math.pi
@@ -209,6 +214,8 @@ class Game():
         whos_turn = 0 # TODO async queue instead?
         # Game loop
         while True:
+            assert len(self.agents) == 40
+            print(len(self.agents))
             if self.game_over():
                 logger.info("Game is over!")
                 break

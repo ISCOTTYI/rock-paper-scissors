@@ -8,7 +8,7 @@ MAX_Y, MIN_Y = 400, 0
 R = 50 / 2
 HOST = '127.0.0.1'
 PORT = 9999
-PLAYER_NUMBER = "0"
+PLAYER_ID = None
 
 pos = {
     'x': 100, 'y': 100,
@@ -40,17 +40,17 @@ if __name__ == '__main__':
     s.connect((HOST, PORT))
     f = s.makefile(mode='rwb', buffering=0) # use file API to interact with socket
     f.write(str(s.getsockname()).encode() + b'\n')
+    PLAYER_ID = (f.readline()).decode()[0]
+    # print(PLAYER_ID)
     while True:
         data = json.loads(f.readline())
         print(f'Got {data}')
-        agents = data[PLAYER_NUMBER]
+        agents = data[PLAYER_ID]
         round = data["round"]
         moves = []
         for agent in agents:
             v, phi = step(*agent[1:])
             moves.append([v, phi])
         response = {"round": round, "moves": moves}
-        # import time
-        # time.sleep(1)
         print(f'Responding {response}')
         f.write(json.dumps(response).encode() + b'\n')

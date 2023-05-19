@@ -1,6 +1,7 @@
 import socket
 import json
 
+PLAYER_ID = None
 
 def make_move(game_state):
     # Write your code here
@@ -19,6 +20,7 @@ if __name__ == '__main__':
     s.connect((HOST, PORT))
     f = s.makefile(mode='rwb', buffering=0) # use file API to interact with socket
     f.write(str(s.getsockname()).encode() + b'\n')
+    PLAYER_ID = (f.readline()).decode()[0]
     while True:
         game_state = json.loads(f.readline())
         print(f'got game state {game_state}')

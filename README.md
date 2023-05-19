@@ -8,4 +8,6 @@
 - [x] Player response rules
 - [x] BUG: Website does not update when players join
 - [ ] Fix the framerate of the game, i.e. make sure that every move takes the same time regardless of player response times.
-- [ ] Make sure that the client is automatically assigned its ID
+- [x] Make sure that the client is automatically assigned its ID
+- [ ] Color Code Player Agents
+- [ ] What if only one kind remains?

@@ -10,6 +10,7 @@
 
 double gv = 0.1;
 double gphi = M_PI / 2;
+char PLAYER_ID;
 
 // typedef struct move_s
 // {
@@ -78,6 +79,19 @@ int main()
         std::cerr << "Error sending message1\n";
         return 1;
     }
+
+    char buffer[2];
+    int bytes_received = recv(sock, buffer, 2, 0);
+    if (bytes_received == -1)
+    {
+        std::cerr << "Error receiving data from server\n";
+        return 1;
+    }
+    else
+    {
+        PLAYER_ID = buffer[0];
+    }
+    std::cout << PLAYER_ID;
 
     while (true)
     {
