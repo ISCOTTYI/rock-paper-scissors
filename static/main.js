@@ -43,9 +43,6 @@ async function pollPlayerPositions() {
 }
 
 function game_stats_handler() {
-  // if (Object.keys(myObject).length != numberOfPlayers) {
-  //   // Add card
-  // }
   Object.keys(playerPositions).forEach((playerId, i) => {
     const counts = playerPositions[playerId].reduce((acc, [value]) => {
       acc[value] = (acc[value] || 0) + 1;

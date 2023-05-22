@@ -259,7 +259,7 @@ async def run_web_server(game):
     app.add_routes([
         web.get('/', handler.handle_html_request),
         web.get('/game_state', handler.handle_game_state_request),
-        web.static('/static', './')
+        web.static('/static', './static')
     ])
     runner = web.AppRunner(app)
     await runner.setup()
