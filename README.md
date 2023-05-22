@@ -1,4 +1,16 @@
-# ToDo
+# Rock-Paper-Scissors World Cup Game
+This is a rock-paper-scissors multiplayer game. The players move their agents (rocks,
+papers and scissors) on a 2D playing field. A classical rock-paper-scissors fight
+takes place upon collision of two agents.
+
+![Image](screenshot.png)
+
+## Technical Details
+The players communicate with the game via TCP (game server). The game is visualized
+on a website. The web server and the game server run asynchronously and are both
+controlled by `server.py`. The game logic is fully handled by the server side.
+
+## TODO
 - [x] `Player.make_move()` error catching
 - [ ] C++ client
   - [x] Basic communication
