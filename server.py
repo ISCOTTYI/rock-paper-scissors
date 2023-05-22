@@ -162,8 +162,7 @@ class Game():
         if len(self.players) == self.max_players:
             logger.info('All players joined, starting game!')
             logger.debug(str(self))
-            import time
-            time.sleep(2)
+            await asyncio.sleep(3)
             await self.run()
     
     def add_player(self, player, number_of_agents):

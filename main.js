@@ -5,11 +5,19 @@ const HEIGHT = 400;
 const WIDTH = 400;
 
 let playerPositions;
+let numberOfPlayers = 0;
+
 const colorRGBs = [
   [0, 0, 255], // blue
-  [0, 255, 0], // green
   [255, 0, 0], // red
+  [0, 255, 0], // green
 ];
+const cardClasses = [
+  "bg-primary", // blue
+  "bg-danger", //red
+  "bg-success", // green
+];
+
 let symbols;
 function preload() {
   symbols = {
@@ -27,15 +35,45 @@ async function pollPlayerPositions() {
     console.log(data);
     playerPositions = data;
     redraw(); // calls draw()
+    game_stats_handler();
   } catch (error) {
     console.error(error);
   }
   setTimeout(pollPlayerPositions, msPerFrame);
 }
 
+function game_stats_handler() {
+  // if (Object.keys(myObject).length != numberOfPlayers) {
+  //   // Add card
+  // }
+  Object.keys(playerPositions).forEach((playerId, i) => {
+    const counts = playerPositions[playerId].reduce((acc, [value]) => {
+      acc[value] = (acc[value] || 0) + 1;
+      return acc;
+    }, {});
+    let playerCard = `<div id=card-${playerId} class="card ${cardClasses[i]} text-white mb-2">
+        <div class="card-header"><strong>Player ${playerId}</strong></div>
+        <ul class="list-group list-group-flush text-primary">
+          <li id="card-${playerId}-rocks" class="list-group-item comic-font">REMAINING 🪨 : ${counts["0"]}</li>
+          <li id="card-${playerId}-papers" class="list-group-item comic-font">REMAINING 📜 : ${counts["1"]}</li>
+          <li id="card-${playerId}-scissors" class="list-group-item comic-font">REMAINING ✂️ : ${counts["2"]}</li>
+        </ul>
+      </div>`;
+    let cardElement = document.getElementById(`card-${playerId}`);
+    if (!cardElement) {
+      document.getElementById("game-stats-container").innerHTML += playerCard;
+    } else {
+      document.getElementById(`card-${playerId}-rocks`).innerHTML = `REMAINING 🪨 : ${counts["0"]}`;
+      document.getElementById(`card-${playerId}-papers`).innerHTML = `REMAINING 📜 : ${counts["1"]}`;
+      document.getElementById(`card-${playerId}-scissors`).innerHTML = `REMAINING ✂️ : ${counts["2"]}`;
+    }
+  })
+}
+
 function setup() {
   noLoop();
-  createCanvas(HEIGHT, WIDTH, WEBGL);
+  let canvas = createCanvas(HEIGHT, WIDTH, WEBGL);
+  canvas.parent('simulation');
   noStroke();
   pollPlayerPositions();
 }

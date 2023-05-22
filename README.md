@@ -9,5 +9,6 @@
 - [x] BUG: Website does not update when players join
 - [ ] Fix the framerate of the game, i.e. make sure that every move takes the same time regardless of player response times.
 - [x] Make sure that the client is automatically assigned its ID
-- [ ] Color Code Player Agents
+- [x] Color Code Player Agents
 - [ ] What if only one kind remains?
+- [ ] Change game state format such that it is easier to count rocks, papers, scissors
