@@ -21,9 +21,9 @@ const cardClasses = [
 let symbols;
 function preload() {
   symbols = {
-    "0": loadImage(`/static/rock_scaled.png`),
-    "1": loadImage(`/static/paper_scaled.png`),
-    "2": loadImage(`/static/scissors_scaled.png`)
+    "0": loadImage(`/static/rock.png`),
+    "1": loadImage(`/static/paper.png`),
+    "2": loadImage(`/static/scissors.png`)
   };
 }
 
@@ -51,18 +51,18 @@ function game_stats_handler() {
     let playerCard = `<div id=card-${playerId} class="card ${cardClasses[i]} text-white mb-2">
         <div class="card-header"><strong>Player ${playerId}</strong></div>
         <ul class="list-group list-group-flush text-primary">
-          <li id="card-${playerId}-rocks" class="list-group-item comic-font">REMAINING 🪨 : ${counts["0"]}</li>
-          <li id="card-${playerId}-papers" class="list-group-item comic-font">REMAINING 📜 : ${counts["1"]}</li>
-          <li id="card-${playerId}-scissors" class="list-group-item comic-font">REMAINING ✂️ : ${counts["2"]}</li>
+          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">🪨</span> : <span id="card-${playerId}-rocks">${counts["0"]}</span></li>
+          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">📜</span> : <span id="card-${playerId}-papers">${counts["1"]}</span></li>
+          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">✂️</span> : <span id="card-${playerId}-scissors">${counts["2"]}</span></li>
         </ul>
       </div>`;
     let cardElement = document.getElementById(`card-${playerId}`);
     if (!cardElement) {
       document.getElementById("game-stats-container").innerHTML += playerCard;
     } else {
-      document.getElementById(`card-${playerId}-rocks`).innerHTML = `REMAINING 🪨 : ${counts["0"]}`;
-      document.getElementById(`card-${playerId}-papers`).innerHTML = `REMAINING 📜 : ${counts["1"]}`;
-      document.getElementById(`card-${playerId}-scissors`).innerHTML = `REMAINING ✂️ : ${counts["2"]}`;
+      document.getElementById(`card-${playerId}-rocks`).innerHTML = `${counts["0"]}`;
+      document.getElementById(`card-${playerId}-papers`).innerHTML = `${counts["1"]}`;
+      document.getElementById(`card-${playerId}-scissors`).innerHTML = `${counts["2"]}`;
     }
   })
 }
@@ -83,6 +83,7 @@ function drawAgent(agent, colorRGB = null) { //, symbol = null
   y -= HEIGHT/2;
   if (colorRGB != null) {
     const [r, g, b] = colorRGB;
+    strokeWeight(2);
     stroke(r, g, b);
   }
   texture(symbols[agentType]);

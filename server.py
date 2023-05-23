@@ -158,6 +158,7 @@ class Game():
         player.writer.write(player_id.encode() + b'\n')
         logger.info(f'Player {player_id} with socket address {addr} joined!')
         self.add_player(player, self.agents_per_player)
+        logger.info(f'Waiting for {self.max_players - len(self.players)} more player to join...')
         # All players joined, start game
         if len(self.players) == self.max_players:
             logger.info('All players joined, starting game!')
