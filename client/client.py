@@ -9,7 +9,7 @@ def make_move(game_state):
     #        |
     #       \ /
     #        v
-    pass
+    return # move
 
 
 if __name__ == '__main__':

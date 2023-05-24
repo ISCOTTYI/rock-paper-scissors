@@ -130,7 +130,7 @@ class Game():
         # self.state = {"round": 0}
         self.round = 0
         self.max_players = 2
-        self.agents_per_player = 20
+        self.agents_per_player = 40
     
     @property
     def game_state(self):
@@ -170,7 +170,7 @@ class Game():
         self.players.append(player)
         for _ in range(number_of_agents):
             x, y = randint(*self.x_bounds), randint(*self.y_bounds)
-            player.add_agent(Agent(x, y, self.radius, player))
+            player.add_agent(Agent(x, y, self.radius, player, kind=0))
     
     def handle_collisions(self):
         for agent, opponent in combinations(self.agents, 2):
@@ -214,8 +214,6 @@ class Game():
         whos_turn = 0 # TODO async queue instead?
         # Game loop
         while True:
-            assert len(self.agents) == 40
-            print(len(self.agents))
             if self.game_over():
                 logger.info("Game is over!")
                 break
