@@ -7,6 +7,7 @@
 #include <cmath>
 #include <sstream>
 #include <regex>
+#include <vector>
 
 double gv = 0.1;
 double gphi = M_PI / 2;
@@ -113,12 +114,18 @@ int main()
     while (true)
     {
         // Receive data from the server
-        const int max_buffer_size = 2048;
-        char buffer[max_buffer_size];
+        int max_buffer_size = 4096;
+        std::vector<char> buffer(max_buffer_size);
+        // char buffer[max_buffer_size];
         int bytes_received = 0;
         while (true)
         {
-            int bytes = recv(sock, buffer + bytes_received, 1, 0);
+            if (bytes_received >= max_buffer_size)
+            {
+                buffer.resize(buffer.size() + max_buffer_size / 2);
+            }
+            // Receive one byte at a time
+            int bytes = recv(sock, &buffer[bytes_received], 1, 0);
             if (bytes == -1)
             {
                 std::cerr << "Error receiving data from server\n";
@@ -132,29 +139,23 @@ int main()
             else
             {
                 bytes_received += bytes;
-                if (bytes_received == max_buffer_size)
-                {
-                    // Buffer full, increase its size or process the data
-                    std::cerr << "Received message is too long for the buffer\n";
-                    return 1;
-                }
-                else if (buffer[bytes_received - 1] == '\n')
+                if (buffer[bytes_received - 1] == '\n')
                 {
                     // End of message received
                     break;
                 }
             }
         }
-        // Print the received data
+        // Handle received game state
         buffer[bytes_received - 1] = '\0';
-        std::string buffer_str = std::string(buffer);
+        std::string buffer_str = std::string(&buffer[0]);
 
         // Send a response to the server
         std::string move = make_move(buffer_str);
 
         if (send(sock, move.c_str(), std::strlen(move.c_str()), 0) == -1)
         {
-            std::cerr << "Error sending move_msg\n";
+            std::cerr << "Error sending move\n";
             return 1;
         }
     }

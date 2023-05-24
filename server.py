@@ -130,7 +130,7 @@ class Game():
         # self.state = {"round": 0}
         self.round = 0
         self.max_players = 2
-        self.agents_per_player = 40
+        self.agents_per_player = 15
     
     @property
     def game_state(self):
@@ -170,7 +170,7 @@ class Game():
         self.players.append(player)
         for _ in range(number_of_agents):
             x, y = randint(*self.x_bounds), randint(*self.y_bounds)
-            player.add_agent(Agent(x, y, self.radius, player, kind=0))
+            player.add_agent(Agent(x, y, self.radius, player))
     
     def handle_collisions(self):
         for agent, opponent in combinations(self.agents, 2):
