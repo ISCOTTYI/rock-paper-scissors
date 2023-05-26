@@ -9,9 +9,12 @@
 #include <regex>
 #include <vector>
 
-double gv = 0.1;
-double gphi = M_PI / 2;
 char PLAYER_ID;
+const int MAX_X = 400;
+const int MIN_X = 0;
+const int MAX_Y = 400;
+const int MIN_Y = 0;
+const int R = 10;
 
 std::string make_move(std::string &game_state)
 {
@@ -20,33 +23,7 @@ std::string make_move(std::string &game_state)
     //        |
     //       \ /
     //        v
-    // std::string move;
-    // return move;
-    std::regex re(R"(^\D*(\d+))");
-    std::smatch match;
-    std::regex_search(game_state, match, re);
-    std::string round_number = match[1];
-
-    std::cout << gv << gphi << std::endl;
-    std::stringstream move_msg_s;
-    move_msg_s
-        << "{\"round\": " << round_number
-        << ", \"moves\": [";
-    for (int i = 0; i < 40; i++)
-    {
-        move_msg_s
-            << "["
-            << std::to_string(gv) << ", "
-            << std::to_string(gphi)
-            << "]";
-        if (i < 39)
-        {
-            move_msg_s << ", ";
-        }
-    }
-    move_msg_s << "]" << "}\n";
-    std::string move = move_msg_s.str();
-    std::cout << move << std::endl;
+    std::string move;
     return move;
 }
 

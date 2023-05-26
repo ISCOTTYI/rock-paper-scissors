@@ -44,8 +44,12 @@ async function pollPlayerPositions() {
 
 function game_stats_handler() {
   Object.keys(playerPositions).forEach((playerId, i) => {
-    const counts = playerPositions[playerId].reduce((acc, [value]) => {
-      acc[value] = (acc[value] || 0) + 1;
+    const counts = playerPositions[playerId].reduce((acc, curr) => {
+      const key = curr[1];
+      if (!acc[key]) {
+        acc[key] = 0;
+      }
+      acc[key]++;
       return acc;
     }, {});
     let playerCard = `<div id=card-${playerId} class="card ${cardClasses[i]} text-white mb-2">
@@ -76,7 +80,7 @@ function setup() {
 }
 
 function drawAgent(agent, colorRGB = null) { //, symbol = null
-  let [agentType, x, y] = agent;
+  let [id, agentType, x, y] = agent;
   const ballDiameter = 20;
   // WEBGL places (0, 0) in the center of the canvas, correct that
   x -= WIDTH/2;

@@ -2,8 +2,11 @@ import socket
 import json
 
 PLAYER_ID = None
+MAX_X, MIN_X = 400, 0
+MAX_Y, MIN_Y = 400, 0
+R = 10
 
-def make_move(game_state):
+def make_move(game_state: str) -> str:
     # Write your code here
     #        |
     #        |

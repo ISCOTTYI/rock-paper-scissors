@@ -5,35 +5,13 @@ import numpy as np
 
 MAX_X, MIN_X = 400, 0
 MAX_Y, MIN_Y = 400, 0
-R = 50 / 2
+R = 10
 HOST = '127.0.0.1'
 PORT = 9999
 PLAYER_ID = None
 
-pos = {
-    'x': 100, 'y': 100,
-    'dx': random.random(), 'dy': random.random()
-}
-
-# dx, dy = random.uniform(0.0, 0.1), random.uniform(0.0, 0.1)
 v = 0.1
 phi = random.uniform(0, 2*np.pi)
-
-def step(x, y):
-    global v, phi
-    return [v, phi]
-
-# def step(x, y):
-#     global dx
-#     global dy
-#     nx = x + dx
-#     ny = y + dy
-#     if nx + R > MAX_X or nx - R < MIN_X:
-#         dx *= -1
-#     if ny + R > MAX_Y or ny - R < MIN_Y:
-#         dy *= -1
-#     return nx, ny
-
 
 if __name__ == '__main__':
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -41,7 +19,6 @@ if __name__ == '__main__':
     f = s.makefile(mode='rwb', buffering=0) # use file API to interact with socket
     f.write(str(s.getsockname()).encode() + b'\n')
     PLAYER_ID = (f.readline()).decode()[0]
-    # print(PLAYER_ID)
     while True:
         data = json.loads(f.readline())
         print(f'Got {data}')
@@ -49,8 +26,8 @@ if __name__ == '__main__':
         round = data["round"]
         moves = []
         for agent in agents:
-            v, phi = step(*agent[1:])
-            moves.append([v, phi])
+            id, kind, x, y = agent
+            moves.append([id, v, phi])
         response = {"round": round, "moves": moves}
         print(f'Responding {response}')
         f.write(json.dumps(response).encode() + b'\n')

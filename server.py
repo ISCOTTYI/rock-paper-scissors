@@ -31,7 +31,7 @@ class Agent():
         self.owner = owner
 
     def json_serializable(self):
-        return [str(self.kind), self.x, self.y]
+        return [self.id, str(self.kind), self.x, self.y]
     
     def move_agent(self, x, y):
         self.x = x
@@ -71,6 +71,11 @@ class Player():
     @property
     def agents(self):
         return list(self._agents.values())
+
+    def agent(self, id):
+        if id in self._agents:
+            return self._agents[id]
+        raise Exception(f"Agent {id} does not belong to player {self.id}!")
     
     def json_serializable(self):
         return self.agents
@@ -186,14 +191,15 @@ class Game():
     
     def parse_player_moves(self, player, moves):
         '''
-        moves is list of [v, phi] pairs in order of player agents
-        TODO: Use agent id instead somehow to avoid confusion
+        moves is list of [id, v, phi] pairs in order of player agents
         '''
-        for i, move in enumerate(moves):
-            agent = player.agents[i] # TODO: THIS IS SHIT!
-                                    #       maybe keep a dict of all agents in
-                                    #       the game with id keys in Game()?
-            v, phi = move
+        for move in moves:
+            id, v, phi = move
+            try:
+                agent = player.agent(int(id))
+            except Exception:
+                logger.warning(f'Player {player.id} sent move for unowned agent {id}')
+                continue
             assert 0 <= v <= 0.1
             assert 0 <= phi <= 2*math.pi
             x_dir = math.cos(phi)

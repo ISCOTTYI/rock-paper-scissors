@@ -2,8 +2,13 @@
 async_test.py
 Makefile
 cpp_client
+a.out*
 NOTES.md
 tests.ipynb
 /.ipynb_checkpoints
 /.vscode
 /__pycache__
+test_socket.py
+temp.txt
+/client/cpp_receivers
+/client/test_client.cpp
