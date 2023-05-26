@@ -50,19 +50,21 @@ $ pip install -r requirements.txt
   properly.
 
 ## Getting Started
-To test your installation, you can try to run the example clients. In your terminal run
+To test your installation, you can try to run the example client. In your terminal run
 ```
 $ python server.py
 ```
-and go to `127.0.0.1:8080` in your browser. Then run
+and go to `127.0.0.1:8080` in your browser. Then, in a separate terminal, run
 ```
-$ python client/client.py
+$ python client/test_client.py
 ```
-and you should see a client with a couple agents appearing on the webpage.
+and you should see a client with a couple agents appearing on the webpage. In a third
+terminal window you might want to also try running a second instance of the `test_client.py`.
+This should start a game between the two `test_client.py`s.
 ### Playing the Game
 To play the game you have to modify the clients in the `client` directory.
 Clients in C++ and Python are included. If you want to play in any other programming
-language, you will have to write your own client (see [Technical Details](#technical-details)).
+language, you will have to write your own client from scratch (see [Technical Details](#technical-details)).
 
 The game is played in rounds. In each round, one player makes one move (move all its
 agents). Then, in the next round, it's the next players turn to make a move. At the
@@ -72,44 +74,68 @@ The game state is transmitted as a string encoded [JSON](https://www.w3schools.c
 Consider a game in round 15 with two players with respective player IDs 0 and 1, where each player
 has two agents, then the game state would look something like this:
 ```
-"{"round": 15, "0": [["0", 10.2, 12.3], ["2", 300.2, 76.3]], "1": [["2", 30.2, 120.3], ["1", 350.2, 68.3]]}"
+"{"round": 15, "0": [[23, "0", 10.2, 12.3], [12, "2", 300.2, 76.3]], "1": [[15, "2", 30.2, 120.3], [2, "1", 350.2, 68.3]]}"
 ```
-The agents are encoded as a 3-tuple, e.g. `["0", 10.2, 12.3]`, where the first entry
-tells that the particular agent is a rock (`"0"`), paper (`"1"`) or scissor (`"2"`) and
-the second and third entry denote the coordinates of the agent. The playing field is
-a 400 by 400 pixel area with periodic boundary conditions. From this game state
-the player now calculates the moves of its own agents. Each agent is moved by
-specifying a speed (between 0 and 0.1) and a polar angle (between 0 and 2π). The move
-is return again as a string encoded JSON object, e.g.
+The agents are encoded as a 4-tuple, e.g. `[23, "0", 10.2, 12.3]`, where the
+first entry is the unique agent ID, the second entry tells if the particular
+agent is a rock (`"0"`), paper (`"1"`) or scissor (`"2"`) and the third and
+fourth entry denote the coordinates of the agent. The playing field is a 400 by
+400 pixel area with periodic boundary conditions. From this game state the
+player now calculates the moves of its own agents. The own player ID and other
+useful constants such as the playing field size and the radius of the agents are
+preset in the client templates. Each agent is moved by specifying a speed
+(between 0 and 0.1) and a polar angle (between 0 and 2π). The move is return
+again as a string encoded JSON object, e.g.
 ```
-"{"round": 15, "moves": [[0.09, 3.4596], [0.1, 1.2349]]}"
+"{"round": 15, "moves": [[23, 0.09, 3.4596], [12, 0.1, 1.2349]]}"
 ```
-Notice, that the round must also be returned with the move. In `"moves"`, the player
-specifies the speed and polar angles for each of its agents. Make sure that the format
-of the returned move matches the one above and that the transmitted round number matches
-the one that was received in the game state.
+Notice, that the round must also be returned with the move. In `"moves"`, the
+player specifies the ID of the agent that shall be moved as well as the speed
+and polar angles for each of its agents. Make sure that the format of the
+returned move matches the one above and that the transmitted round number
+matches the one that was received in the game state.
+
+In order to ensure that the game runs sufficiently smooth, each player only has
+a fixed time of 10 ms per move. If the server did not receive a response from the
+client within this time, the move will simply be skipped and the server will output
+a warning to the console.
 
 In the provided C++ and Python clients, the communication with the server is already
 handled. A function `make_move(game_state)` is provided, which you should implement.
 The game state is available through the argument. Returning a move, as described above,
 from the function suffices to play the game.
 
+### Troubleshooting
+* **There is a good chance that you encounter bugs in the framework. Please let us know
+  if you see something fishy.**
+* If there are problems with the game, the first place to check is the console output of
+  `server.py`.
+* Make sure that the format of the returned moves matches the format above.
+* If a client is accidentally disconnected or there is other unwanted behavior it
+  is normally necessary to restart the server.
+* If you compile your C++ code on Windows, problems with the TCP sockets may arise.
+  To solve this problem, either do the right thing and install Linux instead of Windows,
+  or just use a UNIX-like compiler such as [MinGW](https://mingw.osdn.io/).
+
 ## Technical Details
 The players communicate with the game via TCP (game server). The game is visualized
 on a website. The web server and the game server run asynchronously and are both
 controlled by `server.py`. The game logic is fully handled by the server side.
+The client socket continuously listens for an updated game state. Upon receive the
+game state is processed and moves are sent back to the server. 
 
 ## TODO
 - [x] `Player.make_move()` error catching
-- [ ] C++ client
+- [x] C++ client
   - [x] Basic communication
   - [x] Parse JSON
-  - [ ] Needs a `readline()` from TCP stream (buffering) (DONE?)
+  - [x] Needs a `readline()` from TCP stream (buffering) (DONE?)
+  - [ ] Is receive too slow?
 - [x] Parse player response, should not modify whole game state
 - [x] Player response rules
 - [x] BUG: Website does not update when players join
 - [ ] Fix the framerate of the game, i.e. make sure that every move takes the same time regardless of player response times.
 - [x] Make sure that the client is automatically assigned its ID
 - [x] Color Code Player Agents
-- [ ] What if only one kind remains?
+- [x] What if only one kind remains?
 - [ ] Change game state format such that it is easier to count rocks, papers, scissors
