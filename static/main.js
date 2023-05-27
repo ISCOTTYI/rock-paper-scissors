@@ -55,18 +55,18 @@ function game_stats_handler() {
     let playerCard = `<div id=card-${playerId} class="card ${cardClasses[i]} text-white mb-2">
         <div class="card-header"><strong>Player ${playerId}</strong></div>
         <ul class="list-group list-group-flush text-primary">
-          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">🪨</span> : <span id="card-${playerId}-rocks">${counts["0"]}</span></li>
-          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">📜</span> : <span id="card-${playerId}-papers">${counts["1"]}</span></li>
-          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">✂️</span> : <span id="card-${playerId}-scissors">${counts["2"]}</span></li>
+          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">🪨</span> : <span id="card-${playerId}-rocks">${counts["0"] == undefined ? 0 : counts["0"]}</span></li>
+          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">📜</span> : <span id="card-${playerId}-papers">${counts["1"] == undefined ? 0 : counts["1"]}</span></li>
+          <li class="list-group-item comic-font">REMAINING <span class="emoji-font">✂️</span> : <span id="card-${playerId}-scissors">${counts["2"] == undefined ? 0 : counts["2"]}</span></li>
         </ul>
       </div>`;
     let cardElement = document.getElementById(`card-${playerId}`);
     if (!cardElement) {
       document.getElementById("game-stats-container").innerHTML += playerCard;
     } else {
-      document.getElementById(`card-${playerId}-rocks`).innerHTML = `${counts["0"]}`;
-      document.getElementById(`card-${playerId}-papers`).innerHTML = `${counts["1"]}`;
-      document.getElementById(`card-${playerId}-scissors`).innerHTML = `${counts["2"]}`;
+      document.getElementById(`card-${playerId}-rocks`).innerHTML = `${counts["0"] == undefined ? 0 : counts["0"]}`;
+      document.getElementById(`card-${playerId}-papers`).innerHTML = `${counts["1"] == undefined ? 0 : counts["1"]}`;
+      document.getElementById(`card-${playerId}-scissors`).innerHTML = `${counts["2"] == undefined ? 0 : counts["2"]}`;
     }
   })
 }

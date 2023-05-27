@@ -110,11 +110,18 @@ from the function suffices to play the game.
   if you see something fishy.**
 * If there are problems with the game, the first place to check is the console output of
   `server.py`.
+* In `server.py` you may also activate richer console output by running the server
+  with the `--debug` flag, i.e. using
+  ```
+  $ python server.py --debug
+  ```
+  It may also help to print the received
+  game state and your response (moves) to the console in your client implementation.
 * Make sure that the format of the returned moves matches the format above.
 * If a client is accidentally disconnected or there is other unwanted behavior it
   is normally necessary to restart the server.
 * If you compile your C++ code on Windows, problems with the TCP sockets may arise.
-  To solve this problem, either do the right thing and install Linux instead of Windows,
+  To solve these problems, either do the right thing and install Linux instead of Windows,
   or just use a UNIX-like compiler such as [MinGW](https://mingw.osdn.io/).
 
 ## Technical Details

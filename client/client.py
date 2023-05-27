@@ -26,7 +26,7 @@ if __name__ == '__main__':
     PLAYER_ID = (f.readline()).decode()[0]
     while True:
         game_state = json.loads(f.readline())
-        print(f'got game state {game_state}')
+        # print(f'got game state {game_state}')
         move = make_move(game_state)
-        print(f'moving to {move}')
+        # print(f'moving to {move}')
         f.write(json.dumps(move).encode() + b'\n')

@@ -2,20 +2,25 @@ import asyncio
 import json
 import logging
 import math
+import argparse
 from aiohttp import web
 from random import randint
-# import numpy as np
 from itertools import combinations
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
-handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
+parser = argparse.ArgumentParser()
+parser.add_argument("--debug", action='store_const', const=True)
+if parser.parse_args().debug:
+    logger.setLevel(logging.DEBUG)
+    handler.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
+    handler.setLevel(logging.INFO)
 logger.addHandler(handler)
-
-
+    
 class Agent():
     count = 0
     def __init__(self, x, y, r, owner, kind=None):
