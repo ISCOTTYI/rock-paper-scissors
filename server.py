@@ -118,9 +118,7 @@ class Player():
         return response["moves"]
     
     async def make_move(self, game_state):
-        # TODO catch error if player disconnects, takes too long or other shit
-        # TODO deal with the case that player did not send data in time. data
-        #      will still be recieved and must be thrown out. send round number
+        # TODO catch error if player disconnects
         MAX_TIMEOUT = 0.01 # 10 ms
         try:
             moves = await asyncio.wait_for(
@@ -244,8 +242,6 @@ class HTTPHandler():
         game_state = self.game.game_state
         my_dumps = lambda d: json.dumps(d, default=lambda o: o.json_serializable())
         return web.json_response(game_state, dumps=my_dumps)
-        # game_state = self.game.to_JSON()
-        # return web.json_response(game_state)
 
     async def handle_html_request(self, request):
         return web.FileResponse('./index.html')
