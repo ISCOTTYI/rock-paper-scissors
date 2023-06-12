@@ -131,7 +131,7 @@ controlled by `server.py`. The game logic is fully handled by the server side.
 The client socket continuously listens for an updated game state. Upon receive the
 game state is processed and moves are sent back to the server. 
 
-## TODO
+<!-- ## TODO
 - [x] `Player.make_move()` error catching
 - [x] C++ client
   - [x] Basic communication
@@ -145,4 +145,4 @@ game state is processed and moves are sent back to the server.
 - [x] Make sure that the client is automatically assigned its ID
 - [x] Color Code Player Agents
 - [x] What if only one kind remains?
-- [ ] Change game state format such that it is easier to count rocks, papers, scissors
+- [ ] Change game state format such that it is easier to count rocks, papers, scissors -->
