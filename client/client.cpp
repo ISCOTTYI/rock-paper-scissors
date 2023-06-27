@@ -129,6 +129,9 @@ int main()
 
         // Send a response to the server
         std::string move = make_move(buffer_str);
+        if (move.back() != '\n') {
+            move += '\n';
+        }
 
         if (send(sock, move.c_str(), std::strlen(move.c_str()), 0) == -1)
         {

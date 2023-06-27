@@ -119,7 +119,7 @@ class Player():
     
     async def make_move(self, game_state):
         # TODO catch error if player disconnects
-        MAX_TIMEOUT = 0.01 # 10 ms
+        MAX_TIMEOUT = 0.1 # 100 ms
         try:
             moves = await asyncio.wait_for(
                 self.send_move_request(game_state), timeout=MAX_TIMEOUT)
@@ -139,6 +139,7 @@ class Game():
         self.round = 0
         self.max_players = 2
         self.agents_per_player = 15
+        self.max_v = 1
     
     @property
     def game_state(self):
@@ -203,7 +204,7 @@ class Game():
             except Exception:
                 logger.warning(f'Player {player.id} sent move for unowned agent {id}')
                 continue
-            assert 0 <= v <= 0.1
+            assert 0 <= v <= self.max_v
             assert 0 <= phi <= 2*math.pi
             x_dir = math.cos(phi)
             y_dir = math.sin(phi)
