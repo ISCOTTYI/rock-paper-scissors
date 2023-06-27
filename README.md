@@ -5,6 +5,12 @@ takes place upon collision of two agents.
 
 ![Image](screenshot.png)
 
+## Change Log
+### [June 27th]
+Changed the maximally allowed delay for a player move to 100 ms and
+the maximum speed to 1. Furthermore, fixed a bug in the C++ client, that caused
+no messaged to be transmitted to the server, despite a valid move.
+
 ## Installation
 In order to install the framework on your machine, you need Python (>3.3) and PIP
 (package manager) installed on your system. Furthermore, it is recommended using
