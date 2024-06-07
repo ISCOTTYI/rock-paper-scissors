@@ -6,6 +6,8 @@ MAX_X, MIN_X = 400, 0
 MAX_Y, MIN_Y = 400, 0
 R = 10
 
+NICKNAME = "[SET YOUR TEAM NAME HERE]"
+
 def make_move(game_state: str) -> str:
     # Write your code here
     #        |
@@ -22,7 +24,8 @@ if __name__ == '__main__':
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((HOST, PORT))
     f = s.makefile(mode='rwb', buffering=0) # use file API to interact with socket
-    f.write(str(s.getsockname()).encode() + b'\n')
+    welcome_msg = str(s.getsockname()) + f"~{NICKNAME}"
+    f.write(welcome_msg.encode() + b'\n')
     PLAYER_ID = (f.readline()).decode()[0]
     while True:
         game_state = json.loads(f.readline())

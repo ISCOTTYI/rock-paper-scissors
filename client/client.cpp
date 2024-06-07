@@ -16,6 +16,8 @@ const int MAX_Y = 400;
 const int MIN_Y = 0;
 const int R = 10;
 
+std::string NICKNAME = "[SET YOUR TEAM NAME HERE]";
+
 std::string make_move(std::string &game_state)
 {
     // Write your code here
@@ -66,8 +68,19 @@ int main()
 
     char addr_msg[1024];
     int bytes_sent = snprintf(
-        addr_msg, 1024, "%s:%d\n",
+        addr_msg, 1024, "%s:%d",
         inet_ntoa(local_address.sin_addr), ntohs(local_address.sin_port));
+
+    // Append player nickname to address message
+    NICKNAME = "~" + NICKNAME + "\n";
+    if (sizeof(addr_msg) - strlen(addr_msg) > NICKNAME.length()) {
+        std::strcat(addr_msg, NICKNAME.c_str());
+        bytes_sent = bytes_sent + NICKNAME.length();
+    } else {
+        std::cerr << "Not enough space in the char array to append the string." << std::endl;
+    }
+
+    std::cout << addr_msg << std::endl;
 
     if (send(sock, addr_msg, bytes_sent, 0) == -1)
     {

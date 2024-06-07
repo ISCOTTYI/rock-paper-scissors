@@ -36,7 +36,7 @@ class Agent():
         self.owner = owner
 
     def json_serializable(self):
-        return [self.id, str(self.kind), self.x, self.y]
+        return [self.id, str(self.kind), round(self.x, 5), round(self.y, 5)]
     
     def move_agent(self, x, y):
         self.x = x
@@ -69,6 +69,7 @@ class Player():
         # self.id = Player.count
         # Player.count += 1
         self.id = id
+        self.nickname = ""
         self.reader = reader
         self.writer = writer
         self._agents = {}
@@ -163,7 +164,8 @@ class Game():
             raise Exception(f'Already {self.max_players} players in the game!')
         player_id = str(len(self.players))
         player = Player(player_id, reader, writer)
-        addr = (await player.reader.readline()).decode()[:-1]
+        player_welcome_msg = (await player.reader.readline()).decode()[:-1]
+        addr, player.nickname = player_welcome_msg.split("~")
         player.writer.write(player_id.encode() + b'\n')
         logger.info(f'Player {player_id} with socket address {addr} joined!')
         self.add_player(player, self.agents_per_player)
@@ -243,6 +245,10 @@ class HTTPHandler():
         game_state = self.game.game_state
         my_dumps = lambda d: json.dumps(d, default=lambda o: o.json_serializable())
         return web.json_response(game_state, dumps=my_dumps)
+    
+    async def handle_player_nickname_request(self, request):
+        player_nicknames = [p.nickname for p in self.game.players]
+        return web.Response(text="~".join(player_nicknames))
 
     async def handle_html_request(self, request):
         return web.FileResponse('./index.html')
@@ -266,6 +272,7 @@ async def run_web_server(game):
     app.add_routes([
         web.get('/', handler.handle_html_request),
         web.get('/game_state', handler.handle_game_state_request),
+        web.get('/nicknames', handler.handle_player_nickname_request),
         web.static('/static', './static')
     ])
     runner = web.AppRunner(app)

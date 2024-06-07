@@ -9,6 +9,7 @@ R = 10
 HOST = '127.0.0.1'
 PORT = 9999
 PLAYER_ID = None
+TEAM_NAME = "test_client"
 
 v = 0.1
 phi = random.uniform(0, 2*np.pi)
@@ -17,7 +18,8 @@ if __name__ == '__main__':
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((HOST, PORT))
     f = s.makefile(mode='rwb', buffering=0) # use file API to interact with socket
-    f.write(str(s.getsockname()).encode() + b'\n')
+    welcome_msg = str(s.getsockname()) + f"~{TEAM_NAME}"
+    f.write(welcome_msg.encode() + b'\n')
     PLAYER_ID = (f.readline()).decode()[0]
     while True:
         data = json.loads(f.readline())

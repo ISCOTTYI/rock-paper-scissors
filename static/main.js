@@ -5,6 +5,7 @@ const HEIGHT = 400;
 const WIDTH = 400;
 
 let playerPositions;
+let nicknames;
 let numberOfPlayers = 0;
 
 const colorRGBs = [
@@ -42,6 +43,17 @@ async function pollPlayerPositions() {
   setTimeout(pollPlayerPositions, msPerFrame);
 }
 
+async function setPlayerNicknames() {
+  try{
+    const response = await fetch("/nicknames");
+    let stringNicknames = await response.text();
+    nicknames = stringNicknames.split('~');
+    console.log(nicknames);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function game_stats_handler() {
   Object.keys(playerPositions).forEach((playerId, i) => {
     const counts = playerPositions[playerId].reduce((acc, curr) => {
@@ -52,8 +64,9 @@ function game_stats_handler() {
       acc[key]++;
       return acc;
     }, {});
+    const nickname = nicknames[playerId];
     let playerCard = `<div id=card-${playerId} class="card ${cardClasses[i]} text-white mb-2">
-        <div class="card-header"><strong>Player ${playerId}</strong></div>
+        <div class="card-header"><strong>Player ${playerId}: ${nickname}</strong></div>
         <ul class="list-group list-group-flush text-primary">
           <li class="list-group-item comic-font">REMAINING <span class="emoji-font">🪨</span> : <span id="card-${playerId}-rocks">${counts["0"] == undefined ? 0 : counts["0"]}</span></li>
           <li class="list-group-item comic-font">REMAINING <span class="emoji-font">📜</span> : <span id="card-${playerId}-papers">${counts["1"] == undefined ? 0 : counts["1"]}</span></li>
@@ -76,6 +89,7 @@ function setup() {
   let canvas = createCanvas(HEIGHT, WIDTH, WEBGL);
   canvas.parent('simulation');
   noStroke();
+  setPlayerNicknames();
   pollPlayerPositions();
 }
 
