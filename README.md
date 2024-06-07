@@ -6,10 +6,13 @@ takes place upon collision of two agents.
 ![Image](screenshot.png)
 
 ## Change Log
-### [June 27th]
+### [June 27th, 2023]
 Changed the maximally allowed delay for a player move to 100 ms and
 the maximum speed to 1. Furthermore, fixed a bug in the C++ client, that caused
 no messaged to be transmitted to the server, despite a valid move.
+
+### [June 7th, 2024]
+Added nicknames to the game. Old clients will no longer work!
 
 ## Installation
 In order to install the framework on your machine, you need Python (>3.3) and PIP
@@ -72,7 +75,11 @@ To play the game you have to modify the clients in the `client` directory.
 Clients in C++ and Python are included. If you want to play in any other programming
 language, you will have to write your own client from scratch (see [Technical Details](#technical-details)).
 
-The game is played in rounds. In each round, one player makes one move (move all its
+Start by setting a creative nickname, by changing the `NICKNAME` variable in
+your client. On the technical level you will have a player ID which is
+stored in the `PLAYER_ID` variable.
+
+The game is played in rounds. In each round, one player makes one move (moveing all its
 agents). Then, in the next round, it's the next players turn to make a move. At the
 start of a round the player receives the current game state and the current round
 and calculates his move from that information, which is then returned.
@@ -127,8 +134,9 @@ from the function suffices to play the game.
 * If a client is accidentally disconnected or there is other unwanted behavior it
   is normally necessary to restart the server.
 * If you compile your C++ code on Windows, problems with the TCP sockets may arise.
-  To solve these problems, either do the right thing and install Linux instead of Windows,
-  or just use a UNIX-like compiler such as [MinGW](https://mingw.osdn.io/).
+  To solve these problems, either do the right thing and install Linux on your
+  machine (bootable or via WSL), or just use a UNIX-like compiler such as
+  [MinGW](https://mingw.osdn.io/).
 
 ## Technical Details
 The players communicate with the game via TCP (game server). The game is visualized
