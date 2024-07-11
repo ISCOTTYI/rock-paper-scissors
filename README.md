@@ -6,13 +6,16 @@ takes place upon collision of two agents.
 ![Image](screenshot.png)
 
 ## Change Log
+### [July 11th, 2024]
+Fixed bug, where player nicknames did not show up unless the page was reloaded.
+
+### [June 7th, 2024]
+Added nicknames to the game. Old clients will no longer work!
+
 ### [June 27th, 2023]
 Changed the maximally allowed delay for a player move to 100 ms and
 the maximum speed to 1. Furthermore, fixed a bug in the C++ client, that caused
 no messaged to be transmitted to the server, despite a valid move.
-
-### [June 7th, 2024]
-Added nicknames to the game. Old clients will no longer work!
 
 ## Installation
 In order to install the framework on your machine, you need Python (>3.3) and PIP
