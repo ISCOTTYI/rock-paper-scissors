@@ -32,8 +32,11 @@ async function pollPlayerPositions() {
   try {
     const response = await fetch("/game_state");
     let data = await response.json();
-    delete data.round;
     console.log(data);
+    if (data.round == 0) {
+      await setPlayerNicknames();
+    }
+    delete data.round;
     playerPositions = data;
     redraw(); // calls draw()
     game_stats_handler();
