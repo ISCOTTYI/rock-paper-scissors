@@ -6,6 +6,10 @@ takes place upon collision of two agents.
 ![Image](screenshot.png)
 
 ## Change Log
+### [July 12th, 2024]
+Fixed bug, where sample Python client served wrong type to `make_move()`
+function.
+
 ### [July 11th, 2024]
 Fixed bug, where player nicknames did not show up unless the page was reloaded.
 

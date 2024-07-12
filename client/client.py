@@ -6,11 +6,9 @@ MAX_X, MIN_X = 400, 0
 MAX_Y, MIN_Y = 400, 0
 R = 10
 
-NICKNAME = "Test"
+NICKNAME = "[SET YOUR TEAM NAME HERE]"
 
 def make_move(game_state: str) -> str:
-    print(type(game_state))
-    print(game_state)
     # Write your code here
     #        |
     #        |
